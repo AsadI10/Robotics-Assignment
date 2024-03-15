@@ -6,9 +6,6 @@ backs up and turns. */
 #include <Zumo32U4.h>
 #include <Zumo32U4LineSensors.h>
 
-
-// This might need to be tuned for different lighting conditions,
-// surfaces, etc.
 #define QTR_THRESHOLD     800  // microseconds
 // #define TURN_180_DURATION  700 // ms, this is an example value
 
@@ -38,7 +35,6 @@ bool lastTurnWasRight = false; // Initially set to false so the first turn will 
 
 #define NUM_SENSORS 3
 unsigned int lineSensorValues[NUM_SENSORS];
-
 
 bool proxLeftActive;
 bool proxFrontActive;
