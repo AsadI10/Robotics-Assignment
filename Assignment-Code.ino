@@ -6,6 +6,9 @@ backs up and turns. */
 #include <Zumo32U4.h>
 #include <Zumo32U4LineSensors.h>
 
+
+// This might need to be tuned for different lighting conditions,
+// surfaces, etc.
 #define QTR_THRESHOLD     800  // microseconds
 // #define TURN_180_DURATION  700 // ms, this is an example value
 
@@ -15,7 +18,8 @@ backs up and turns. */
 #define FORWARD_SPEED     100
 #define REVERSE_DURATION  80  // ms
 #define TURN_DURATION     250  // ms
-#define TURN_180_DURATION 180
+#define TURN_180_DURATION 200 //I've set it a bit higher
+#define LONGER_REVERSE_DURATION  400  // ms
 
 // #define TRIGGER_PIN       4   // Ultrasonic sensor trigger pin
 // #define ECHO_PIN          5   // Ultrasonic sensor echo pin
@@ -35,6 +39,7 @@ bool lastTurnWasRight = false; // Initially set to false so the first turn will 
 
 #define NUM_SENSORS 3
 unsigned int lineSensorValues[NUM_SENSORS];
+
 
 bool proxLeftActive;
 bool proxFrontActive;
@@ -61,17 +66,39 @@ void waitForButtonAndCountDown()
   buzzer.playNote(NOTE_G(4), 500, 15);
   delay(1000);
 }
+void calibrateSensors()
+{
+  display.clear();
+
+  // Wait 1 second and then begin automatic sensor calibration
+  // by rotating in place to sweep the sensors over the line
+  delay(1000);
+  for(uint16_t i = 0; i < 120; i++)
+  {
+    if (i > 30 && i <= 90)
+    {
+      motors.setSpeeds(-200, 200);
+    }
+    else
+    {
+      motors.setSpeeds(200, -200);
+    }
+
+    lineSensors.calibrate();
+  }
+  motors.setSpeeds(0, 0);
+}
 
 void setup()
 {
   // Uncomment if necessary to correct motor directions:
   //motors.flipLeftMotor(true);
   //motors.flipRightMotor(true);
+  calibrateSensors();
   lineSensors.initThreeSensors();
   waitForButtonAndCountDown();
   proxSensors.initThreeSensors();
-
-  waitForButtonAndCountDown();
+  // waitForButtonAndCountDown();
 }
 
 void loop() {
@@ -99,20 +126,24 @@ void loop() {
   Serial.println(proxRightRightActive);
 
 
-  if( proxLeftActive == 5){
-    motors.setSpeeds(0,0);
-    // delay(1000);
-    } else if(proxFrontActive == 6){
-      motors.setSpeeds(0,0);
-      delay(1000);
-      delay(TURN_180_DURATION);
-      motors.setSpeeds(-REVERSE_SPEED, -REVERSE_SPEED);
-      buzzer.playNote(NOTE_G(4), 500, 15);
-      } else if(proxRightActive == 5){
-        motors.setSpeeds(0,0);
-        // delay(1000);
-        } else if(proxRightRightActive = 5){
-          motors.setSpeeds(0,0);
+ if(proxFrontActive == 6){
+    motors.setSpeeds(0, 0);
+    // buzzer.playNote(NOTE_G(4), 500, 15); // Sound feedback after the turn
+    buzzer.playFrequency(3000, 1000, 20); 
+    delay(3000); // Pause for a moment to ensure a full stop
+    // Start a longer reverse movement
+    motors.setSpeeds(-REVERSE_SPEED, -REVERSE_SPEED);
+    delay(LONGER_REVERSE_DURATION); // Reverse for a longer duration for more distance
+    
+    // Turn degrees
+    if (lastTurnWasRight) {
+      motors.setSpeeds(-TURN_SPEED, TURN_SPEED); // Turn left to complete degrees
+      lastTurnWasRight = false;
+    } else {
+      motors.setSpeeds(TURN_SPEED, -TURN_SPEED); // Turn right to complete degrees
+      lastTurnWasRight = true;
+    }
+    delay(TURN_180_DURATION); // Duration to complete the 180-degree turn
 }
 
   // Adjusted condition to check for corners more effectively
